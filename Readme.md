@@ -11,18 +11,15 @@ El juego presenta un conjunto de preguntas de opción múltiple con niveles de d
 
 ## Requisitos
 
-- **C++23** compatible con tu compilador.
-- **HelloImGui**: Una biblioteca basada en **Dear ImGui** para crear interfaces gráficas rápidas y reactivas.
-- **Un compilador compatible con C++23**.
+- **Un compilador compatible con C++23** (probado con clang 19.1.3).
 - **Librerías de ImGui**: Es necesario instalar ImGui y sus dependencias para compilar y ejecutar este proyecto.
+- **CMake**: usado para crear los ejecutables de manera multiplataforma
 
 ### Dependencias
 
 - **ImGui**: Biblioteca para la creación de interfaces gráficas.
 - **HelloImGui**: Facilita la integración de ImGui en aplicaciones con múltiples plataformas y entornos gráficos.
 - **Librerías estándar de C++** (para funciones como `std::array`, `std::string`, `std::locale` y manipulación de números aleatorios).
-- **Cmake**: usado para crear los ejecutables de manera multiplataforma
-
 
 ## Características
 
