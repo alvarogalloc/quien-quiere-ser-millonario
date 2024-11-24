@@ -1,219 +1,88 @@
-# hello_imgui_template: get started with HelloImGui in 5 minutes 
+# Quien Quiere Ser Millonario
+## Proyecto Final: Análisis y Diseño de algoritmos
 
-This template demonstrates how to easily integrate HelloImGui to your own project. 
+## Hecho por: Lourdes Orozco, Lourdes Álvarez y Álvaro Gallo
 
-You can use it as a starting point for your own project.
+## Descripción
 
-Template repository: https://github.com/pthom/hello_imgui_template
+Este proyecto es una implementación en **C++23** de un juego inspirado en el clásico "Quien Quiere Ser Millonario". Utiliza la biblioteca **HelloImGui** para la interfaz gráfica de usuario (GUI) y permite al usuario participar en un cuestionario interactivo para ganar premios simulados en efectivo.
 
-## Explanations
+El juego presenta un conjunto de preguntas de opción múltiple con niveles de dificultad, mostrando las recompensas correspondientes según la cantidad de preguntas respondidas correctamente.
 
-### Get Hello ImGui with CMake
+## Requisitos
 
-There are 3 ways to get HelloImGui with CMake. They are documented inside the CMakeLists.txt file.
-By default, option 2 below is used: HelloImGui is downloaded and built automatically at configure time.
+- **C++23** compatible con tu compilador.
+- **HelloImGui**: Una biblioteca basada en **Dear ImGui** para crear interfaces gráficas rápidas y reactivas.
+- **Un compilador compatible con C++23**.
+- **Librerías de ImGui**: Es necesario instalar ImGui y sus dependencias para compilar y ejecutar este proyecto.
 
-#### Option 1: add hello_imgui as a dependency
-If you added hello_imgui as a subfolder, you can add it to your project with:
-```cmake
-add_subdirectory(external/hello_imgui)
+### Dependencias
+
+- **ImGui**: Biblioteca para la creación de interfaces gráficas.
+- **HelloImGui**: Facilita la integración de ImGui en aplicaciones con múltiples plataformas y entornos gráficos.
+- **Librerías estándar de C++** (para funciones como `std::array`, `std::string`, `std::locale` y manipulación de números aleatorios).
+- **Cmake**: usado para crear los ejecutables de manera multiplataforma
+
+
+## Características
+
+- **Interfaz gráfica** creada con **HelloImGui** y **ImGui**.
+- **Preguntas aleatorias** en formato múltiple.
+- **Sistema de puntuación** basado en la correcta respuesta de las preguntas.
+- **Premios simulados** que aumentan con cada pregunta respondida correctamente.
+
+## Estructura del código
+
+### Funciones principales
+
+1. **poll_random_question(level)**:
+   Genera una pregunta aleatoria basada en el nivel del jugador.
+
+2. **CustomButton(label)**:
+   Define y dibuja un botón personalizado para la interfaz gráfica.
+
+3. **BackgroundImage()**:
+   Dibuja el fondo de la interfaz desde un archivo de imagen.
+
+4. **prize_box(question_number, current_question)**:
+   Muestra las cajas de premios con los montos que el jugador puede ganar dependiendo de las preguntas respondidas correctamente.
+
+5. **question_gui(state, current_question)**:
+   Muestra la interfaz de la pregunta actual, sus respuestas y evalúa si la respuesta seleccionada es correcta o incorrecta.
+
+6. **show_scores_gui(current_question)**:
+   Muestra la interfaz con los premios de las preguntas ya respondidas.
+
+### Escenas
+
+- **title**: Pantalla de inicio, muestra el logo y los botones "Jugar" y "Salir".
+- **show_scores**: Pantalla de puntuación, muestra el progreso de las respuestas.
+- **question**: Pantalla donde se presentan las preguntas y opciones de respuesta.
+- **gameover**: Pantalla de fin de juego en caso de respuesta incorrecta.
+- **winner**: Pantalla de victoria cuando el jugador llega al final del juego con todas las respuestas correctas.
+
+### Configuración de paleta de colores
+
+Se utilizan colores personalizados para botones, bordes y fondos:
+```cpp
+namespace pallete {
+    constexpr static auto title_button = ImColor(23, 14, 55).Value;
+    constexpr static auto title_button_hovered = ImColor(46, 38, 75).Value;
+    constexpr static auto color_border = ImColor(255, 255, 255).Value;
+    constexpr static auto green = ImColor(105, 175, 18).Value;
+    constexpr static auto gold = ImColor(175, 168, 18).Value;
+}
 ```
 
-#### Option 2: automatic download
-The [CMakeLists.txt](CMakeLists.txt) file will download and build hello_imgui at configure time, and make the "hello_imgui_add_app" cmake function available, if hello-imgui is not found;
+### Funciones adicionales
 
-By default, you do not need to add HelloImGui as a dependency to your project, it will be downloaded and built automatically during CMake configure time.
-If you wish to use a local copy of HelloImGui, edit CMakeLists.txt and uncomment the `add_subdirectory` line.
+- **MyLoadFonts()**: Carga las fuentes personalizadas para la interfaz gráfica.
+- **BackgroundImage()**: Dibuja el fondo de la pantalla utilizando una imagen.
 
-*Note: `hello_imgui_add_app` will automatically link your app to hello_imgui, embed the assets folder (for desktop, mobile, and emscripten apps), and the application icon.*
+## Ejecución del Juego
 
-#### Option 3: via vcpkg
-You can install hello_imgui via vcpkg with:
-```bash
-vcpkg install "hello-imgui[opengl3-binding,glfw-binding]"
-```
-Then you can use it inside CMake with:
-```cmake
-find_package(hello-imgui CONFIG REQUIRED)
-hello_imgui_add_app(hello_world hello_world.main.cpp)
-```
+- Al iniciar el juego, el jugador verá una pantalla de inicio con las opciones de "Jugar" y "Salir".
+- Al seleccionar "Jugar", comenzará el juego con una serie de preguntas y opciones.
+- El jugador avanza respondiendo correctamente las preguntas. La puntuación se muestra en la pantalla de "show_scores".
+- El juego termina cuando el jugador responde incorrectamente (pantalla de "Game Over") o completa todas las preguntas (pantalla de "Ganaste").
 
-(note: the vcpkg package is named "hello-imgui" with a dash, not "hello_imgui")
-
-
-### Assets folder structure
- 
-
-Anything in the assets/ folder located beside the app's CMakeLists will be bundled 
-together with the app (for macOS, iOS, Android, Emscripten).
-The files in assets/app_settings/ will be used to generate the app icon, 
-and the app settings.
-
-```
-assets/
-├── world.jpg                   # A custom asset. Any file or folder here will be deployed 
-│                               # with the app.
-├── fonts/
-│    ├── DroidSans.ttf           # Default fonts used by HelloImGui
-│    └── fontawesome-webfont.ttf # (if not found, the default ImGui font will be used)
-│               
-├── app_settings/               # Application settings
-│    ├── icon.png               # This will be the app icon, it should be square
-│    │                          # and at least 256x256. It will  be converted
-│    │                          # to the right format, for each platform (except Android)
-│    ├── apple/
-│    │    │── Info.plist         # macOS and iOS app settings
-│    │    │                      # (or Info.ios.plist + Info.macos.plist)
-│    │    └── Resources/
-│    │      └── ios/             # iOS specific settings: storyboard
-│    │        └── LaunchScreen.storyboard
-│    │
-│    ├── android/                # Android app settings: any file placed here will be deployed 
-│    │   │── AndroidManifest.xml # (Optional manifest, HelloImGui will generate one if missing)
-│    │   └── res/                
-│    │       └── mipmap-xxxhdpi/ # Optional icons for different resolutions
-│    │           └── ...         # Use Android Studio to generate them: 
-│    │                           # right click on res/ => New > Image Asset
-│    └── emscripten/
-│      ├── shell.emscripten.html # Emscripten shell file
-│      │                         #   (this file will be cmake "configured"
-│      │                         #    to add the name and favicon) 
-│      └── custom.js             # Any custom file here will be deployed
-│                                #   in the emscripten build folder
-```
-
-## Build instructions
-
-### Build for Linux and macOS
-
-#### 1. Optional: clone hello_imgui
-
-_Note: This step is optional, since the CMakeLists.txt file will by default download and build hello_imgui at configure time._
-
-In this example, we clone hello_imgui inside `external/hello_imgui`
-
-Note: `external/` is mentioned in `.gitignore`
-
-```bash
-mkdir -p external && cd external
-git clone https://github.com/pthom/hello_imgui.git
-cd ..
-```
-
-Add this line at the top of your CMakeLists.txt
-
-```cmake
-add_subdirectory(external/hello_imgui)
-```
-
-#### 2. Create the build directory, run cmake and make
-
-```bash
-mkdir build && cd build
-cmake ..
-make -j 4
-```
-
-### Build for Windows
-
-#### 1. Optional: clone hello_imgui
-Follow step 1 from the Linux/macOS section above.
-
-#### 2. Create the build directory, run cmake
-
-```bash
-mkdir build && cd build
-cmake ..
-```
-
-#### 3. Open the Visual Studio solution
-It should be located in build/helloworld_with_helloimgui.sln
-
-
-### Build for Android
-
-#### 1. Clone hello_imgui:
-You will need to clone hello_imgui. In this example, we clone hello_imgui inside hello_imgui_template/external/hello_imgui
-
-
-```bash
-mkdir -p external && cd external
-git clone https://github.com/pthom/hello_imgui.git
-cd ..
-```
-
-Notes: 
-* `external/` is mentioned in .gitignore
-* the main CMakeList will detect the presence of hello_imgui in `external/hello_imgui`, and will use it instead of downloading it.
-
-
-#### 2. Create the Android Studio project
-```bash
-# Set the ANDROID_HOME and ANDROID_NDK_HOME environment variables
-# For example:
-export ANDROID_HOME=/Users/YourName/Library/Android/sdk
-export ANDROID_NDK_HOME=/Users/YourName/Library/Android/sdk/ndk/26.1.10909125
-
-mkdir build_android && cd build_android
-../external/hello_imgui/tools/android/cmake_arm-android.sh ../
-```
-
-#### 3. Open the project in Android Studio
-It should be located in build_android/hello_world_AndroidStudio.
-
-
-### Build for iOS
-
-#### 1. Clone hello_imgui with its submodules
-
-```bash
-mkdir -p external && cd external
-git clone --recurse-submodules https://github.com/pthom/hello_imgui.git
-cd ..
-```
-
-
-#### 2. Create the Xcode project
-```bash
-mkdir build_ios && cd build_ios
-```
-
-Run CMake with the following command, where you replace XXXXXXXXX with your Apple Developer Team ID,
-and com.your_website with your website (e.g. com.mycompany).
-
-```bash
-cmake .. \
--GXcode \
--DCMAKE_TOOLCHAIN_FILE=../external/hello_imgui/hello_imgui_cmake/ios-cmake/ios.toolchain.cmake \
--DHELLOIMGUI_USE_SDL2=ON \
--DHELLOIMGUI_HAS_OPENGL3=ON \
--DPLATFORM=OS64COMBINED \
--DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM=XXXXXXXXX \
--DHELLO_IMGUI_BUNDLE_IDENTIFIER_URL_PART=com.your_website
-```
-
-Then, open the XCode project in build_ios/helloworld_with_helloimgui.xcodeproj
-
-
-### Build for emscripten
-
-#### Install emscripten
-You can either install emsdk following [the instruction on the emscripten website](https://emscripten.org/docs/getting_started/downloads.html) or you can use the script [hello_imgui/tools/emscripten/install_emscripten.sh](https://github.com/pthom/hello_imgui/blob/master/tools/emscripten/install_emscripten.sh).
-
-#### Compile with emscripten
-
-```bash
-# Add emscripten tools to your path
-source ~/emsdk/emsdk_env.sh
-
-# cmake and build
-mkdir build_emscripten
-cd build_emscripten
-emcmake cmake .. -DCMAKE_BUILD_TYPE=Release  # or Debug (Release builds lead to smaller files)
-make -j 4
-
-# launch a webserver
-python3 -m http.server
-```
-
-Open a browser, and navigate to [http://localhost:8000](http://localhost:8000).

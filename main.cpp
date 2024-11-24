@@ -829,6 +829,7 @@ int main() {
       ImGui::Text("Ganaste!");
       break;
     }
+    }
   };
   params.imGuiWindowParams.showMenuBar = false;
   params.imGuiWindowParams.showMenu_App = false;
