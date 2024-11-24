@@ -1,0 +1,7 @@
+build*/
+cmake-build-*/
+external/
+compile_commands.json
+.DS_Store
+.cache/
+.vscode/
