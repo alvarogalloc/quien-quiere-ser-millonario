@@ -32,7 +32,8 @@ if(EMSCRIPTEN)
   message(STATUS "Building bundle '.html' for web")
 endif()
 # remove emscripten
-if(APPLE AND NOT EMSCRIPTEN)
+option (APP_BUILD_BUNDLE "Build bundle for macOS" OFF)
+if(APPLE AND APP_BUILD_BUNDLE AND NOT EMSCRIPTEN)
   message(STATUS "Building bundle '.app' for macOS")
 
   file(GLOB_RECURSE APP_RESOURCES ${APP_RESOURCE_DIR}/*.*)

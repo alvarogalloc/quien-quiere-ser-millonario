@@ -25,7 +25,10 @@ using ImGui::IsKeyPressed;
 using ImGui::PopFont;
 using ImGui::PopStyleColor;
 using ImGui::PopStyleVar;
+using ImGui::PopItemFlag;
 using ImGui::PushFont;
+using ImGui::BeginDisabled;
+using ImGui::EndDisabled;
 using ImGui::PushStyleColor;
 using ImGui::PushStyleVar;
 using ImGui::SameLine;
@@ -43,6 +46,7 @@ export namespace HelloImGui {
 using HelloImGui::DefaultImGuiWindowType;
 using HelloImGui::GetRunnerParams;
 using HelloImGui::RunnerParams;
+using HelloImGui::ImageButtonFromAsset;
 
 namespace ImGuiDefaultSettings {
 using HelloImGui::ImGuiDefaultSettings::LoadDefaultFont_WithFontAwesomeIcons;
