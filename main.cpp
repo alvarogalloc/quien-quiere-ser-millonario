@@ -1,12 +1,12 @@
 #ifndef DISABLE_MODULES
 import std;
 import hello_imgui;
-#else 
-#include "hello_imgui/hello_imgui.h"
-#include <array>
-#include <random>
-#include <string_view>
-#include <print>
+#else
+  #include "hello_imgui/hello_imgui.h"
+  #include <array>
+  #include <print>
+  #include <random>
+  #include <string_view>
 #endif
 struct question {
   std::string_view question;
@@ -466,7 +466,6 @@ namespace pallete {
   constexpr static auto gold = ImColor(175, 168, 18).Value;
 } // namespace pallete
 
-
 // son funciones solo usadas en este archivo
 namespace {
 
@@ -527,7 +526,8 @@ namespace {
   void timer_bar(const std::uint8_t current_time, const std::uint8_t max_time)
   {
     if (current_time > max_time) {
-      throw std::invalid_argument("Invalid time");
+      std::println("Invalid time");
+      return;
     }
     const auto progress = static_cast<float>(current_time) / max_time;
 
@@ -787,12 +787,7 @@ auto main() -> int
   params.imGuiWindowParams.showMenu_App = false;
 
   // only defined here and not in the global scope as it's only used here
-  enum class scene : std::uint8_t {
-    title,
-    show_scores,
-    question,
-    end
-  };
+  enum class scene : std::uint8_t { title, show_scores, question, end };
 
   struct game_data {
     scene current_scene = scene::title;

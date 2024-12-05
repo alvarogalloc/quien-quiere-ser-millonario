@@ -1,22 +1,24 @@
 cmake_minimum_required(VERSION 3.30)
+option (APP_BUILD_BUNDLE "Build bundle for macOS" OFF)
+option (APP_USE_MODULES "Build with c++20 modules" OFF)
+
+set(CMAKE_CXX_STANDARD 23)
 if(APP_USE_MODULES)
   set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "0e5b6991-d74f-4b3d-a41c-cf096e0b2508")
   set(CMAKE_CXX_MODULE_STD ON)
+  set(CMAKE_CXX_STANDARD_REQUIRED YES)
+  set(CMAKE_CXX_EXTENSIONS ON)
 endif()
+
 project(
   quien-quiere-ser-millonario
   LANGUAGES CXX
   VERSION 0.0.1)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
-set(CMAKE_CXX_EXTENSIONS ON)
 
 set(HELLOIMGUI_MACOS_NO_BUNDLE OFF)
 
 find_package(hello-imgui QUIET)
-option (APP_BUILD_BUNDLE "Build bundle for macOS" OFF)
-option (APP_USE_MODULES "Build with c++20 modules" OFF)
 
 if (NOT hello-imgui_FOUND)
   message(STATUS "Fetching hello_imgui")
@@ -49,14 +51,14 @@ if(NOT APP_USE_MODULES)
   target_compile_definitions(${APP_EXECUTABLE} PRIVATE DISABLE_MODULES)
 else()
   target_sources(${APP_EXECUTABLE} PUBLIC FILE_SET cxx_modules TYPE CXX_MODULES
-                                        FILES external.cppm)
+                                        FILES hello_imgui.cppm)
 endif()
 target_link_libraries(${APP_EXECUTABLE} PRIVATE hello-imgui::hello_imgui)
 set_target_properties(${APP_EXECUTABLE} PROPERTIES OUTPUT_NAME ${APP_NAME})
 
 
 # remove emscripten
-if(APPLE AND APP_BUILD_BUNDLE AND NOT EMSCRIPTEN)
+if(APPLE AND APP_BUILD_BUNDLE)
   message(STATUS "Building bundle '.app' for macOS")
 
   file(GLOB_RECURSE APP_RESOURCES ${APP_RESOURCE_DIR}/*.*)
