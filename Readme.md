@@ -3,11 +3,13 @@
 
 ## Hecho por: Lourdes Orozco, Lourdes Álvarez y Álvaro Gallo
 
+### Si solo quieres jugar, puedes hacerlo [aquí](https://millionaire-game-cpp.netlify.app/)
+
 ## Descripción
 
 Este proyecto es una implementación en **C++23** de un juego inspirado en el clásico "Quien Quiere Ser Millonario". Utiliza la biblioteca **HelloImGui** para la interfaz gráfica de usuario (GUI) y permite al usuario participar en un cuestionario interactivo para ganar premios simulados en efectivo.
 
-El juego presenta un conjunto de preguntas de opción múltiple con niveles de dificultad, mostrando las recompensas correspondientes según la cantidad de preguntas respondidas correctamente.
+El juego presenta un conjunto de preguntas de opción múltiple con niveles de dificultad, mostrando las recompensas correspondientes según la cantidad de preguntas respondidas correctamente. 
 
 ## Requisitos
 
