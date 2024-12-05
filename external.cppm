@@ -19,7 +19,6 @@ export namespace ImGui {
   using ImGui::GetCursorPos;
   using ImGui::GetFont;
   using ImGui::GetIO;
-  using ImGui::GetKeyIndex;
   using ImGui::GetStyle;
   using ImGui::GetWindowDrawList;
   using ImGui::GetWindowHeight;

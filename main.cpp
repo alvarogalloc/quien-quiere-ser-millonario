@@ -1,6 +1,13 @@
+#ifndef DISABLE_MODULES
 import std;
 import hello_imgui;
-
+#else 
+#include "hello_imgui/hello_imgui.h"
+#include <array>
+#include <random>
+#include <string_view>
+#include <print>
+#endif
 struct question {
   std::string_view question;
   std::array<std::string_view, 4> answers;
@@ -618,7 +625,7 @@ namespace {
       ImGui::Dummy(spacing);
       prize_box(i, current_question);
     }
-    std::string_view prompt_text = "Haz click donde sea para continuar";
+    std::string_view prompt_text = "Haz click para continuar";
     ImGui::PushFont(g_font->font);
     const ImVec2 prompt_pos {
       ImGui::GetWindowWidth() - (ImGui::CalcTextSize(prompt_text.data()).x + 10.f),
