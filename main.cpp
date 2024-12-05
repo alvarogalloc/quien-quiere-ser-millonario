@@ -14,6 +14,7 @@ struct question {
   std::uint8_t correct_answer;
 };
 using all_questions = std::array<std::array<question, 10>, 15>;
+// arreglo con todas las preguntas
 constexpr static all_questions questions {{
   // level1
   {{
@@ -608,14 +609,13 @@ void prize_box(const std::uint8_t round_number, const std::uint8_t current_round
   ImGui::PopStyleVar(4);
 }
 
-// returns wheter to continue to the next question
+// al presionar click, retorna true y pasa a la pregunta siguiente
 auto show_scores_gui(std::uint8_t current_question) -> bool
 {
   BackgroundImage();
   top_left_logo();
 
-  // this is 15 boxes one on top of the other with a prize money on each
-  // here we explicitly use signed integers because we want to go from 15 to 1
+  // son 15 cajas de premios y iteramos de 15 a 1 para el tamaño de la caja
   for (std::int8_t i = questions.size(); i > 0; i--) {
     constexpr static ImVec2 spacing {0, 5};
     ImGui::Dummy(spacing);
@@ -623,10 +623,13 @@ auto show_scores_gui(std::uint8_t current_question) -> bool
   }
   std::string_view prompt_text = "Haz click para continuar";
   
+  // este patron se repite muchisimas veces, se podria hacer una funcion, 
+  // pero complicaria un codigo que ya es de 800 lineas
   const ImVec2 prompt_pos {
     ImGui::GetWindowWidth() - (ImGui::CalcTextSize(prompt_text.data()).x + 10.f),
     ImGui::GetWindowHeight() - 50.f};
   ImGui::SetCursorPos(prompt_pos);
+
   ImGui::TextUnformatted(prompt_text.data());
   
   return ImGui::IsMouseClicked(0);
@@ -638,7 +641,7 @@ enum class question_state : std::uint8_t {
   incorrect,
 };
 
-// return true if the button is pressed
+// boton estilizado para el comodin
 bool filter_5050_button()
 {
   constexpr static ImVec2 button_size {96, 96};
@@ -666,8 +669,7 @@ bool play_again_button()
   return custom_button("Jugar de nuevo");
 }
 
-// returns whether to return to title_scene
-// make a big text in the center, with a play_again_button below
+// true cuando se presiona el boton y se quiere jugar de nuevo
 bool end_screen_gui(std::string_view message)
 {
   BackgroundImage();
@@ -686,10 +688,7 @@ bool end_screen_gui(std::string_view message)
 void question_gui(question_state& state, const question& current_question)
 {
   BackgroundImage();
-  // show logo scaled 128x128 on the top left corner
   top_left_logo();
-
-  
 
   auto copy_color = pallete::title_button;
   copy_color.w = 0.7f;
@@ -706,10 +705,10 @@ void question_gui(question_state& state, const question& current_question)
   constexpr static ImVec2 prompt_pos {205, 64};
   constexpr static ImVec2 prompt_size {870, 160};
   ImGui::SetCursorPos(prompt_pos);
-  // we copy it
   constexpr static ImVec2 answer_button_size {480, 160};
 
   constexpr static auto spacing_around_prompt = 128;
+  // lambda porque solo se usa aqui y el inline del compilador ayuda a reducir el tamaño, pero tiene su diagrama de flujo propio
   auto wrapped_text = [max_text_width = prompt_size.x - spacing_around_prompt](std::string str) {
     auto text_size = ImGui::CalcTextSize(str.data());
     if (text_size.x > max_text_width) {
@@ -750,9 +749,10 @@ void question_gui(question_state& state, const question& current_question)
     }
 
     if (not is_valid) {
+      // quita todos los event listeners de los botones quitados
       ImGui::BeginDisabled(true);
     }
-    // ## is the 'empty' token for imgui and add i to avoid duplicate conflicts
+    // '##'+id es un id para que imgui que haga el boton pero sin texto
     const auto button_text = is_valid ? answer.data() : std::format("##{}", i);
     if (ImGui::Button(button_text.c_str(), answer_button_size) and is_valid) {
       if (i == current_question.correct_answer) {
@@ -772,8 +772,7 @@ void question_gui(question_state& state, const question& current_question)
 
 auto main() -> int
 {
-  // use system locale instead of C locale, this means
-  // 1,000 instead of 1000
+  // para usar el separador de miles y decimales del sistema
   std::locale::global(std::locale(""));
 
   HelloImGui::RunnerParams params;
@@ -784,7 +783,7 @@ auto main() -> int
   params.imGuiWindowParams.showMenuBar = false;
   params.imGuiWindowParams.showMenu_App = false;
 
-  // only defined here and not in the global scope as it's only used here
+  // otra vez solo declaro aqui porque solo se usa aqui
   enum class scene : std::uint8_t { title, show_scores, question, end };
 
   struct game_data {
@@ -798,10 +797,15 @@ auto main() -> int
   };
 
   params.callbacks.ShowGui = [&params, data = game_data {}]() mutable {
-    // i'm assigning to current_scene so i need mutable
+    // 'data' lo tomo y pongo 'mutable' para que pueda la misma instancia  cada llamada
 
+    // utilizo un enum para tener nombres descriptivos a valores numericos
     switch (data.current_scene) {
       case scene::title: {
+        // hay dos maneras de salir de la app, con 'request quit' que esta definido por cada sistema operativo
+        // MACOS: cmd+q, WINDOWS: alt+f4, LINUX: alt+f4
+        // Web: cerrar la pestaña
+        // la otra es el boton salir, por eso mando params.appShallExit por referencia
         if (title_screen_gui(params.appShallExit)) {
           data.current_scene = scene::show_scores;
           ImGui::SetWindowFontScale(0.5f);
@@ -817,24 +821,30 @@ auto main() -> int
         break;
       }
       case scene::question: {
+        // si pusiera esta llamada al final, no se veria timer ni filtro 50:50
         question_gui(data.state, data.current_question);
+
+        // manda segundos desde el epoch, se le resta el tiempo de inicio para saber cuanto tiempo ha pasado
         const int elapsed_seconds = std::time(nullptr) - data.start_time;
         const int max_time_seconds = 30;
         if (elapsed_seconds > max_time_seconds) {
+          // si se acaba el tiempo, se va a la pantalla final
           data.current_scene = scene::end;
           data.end_msg = "Se te acabó el tiempo!";
         } else {
+          // seguir mostrando el tiempo
           timer_bar(elapsed_seconds, max_time_seconds);
         }
-        // order matters, for z layering
         if (not data.has_used_50_50 and filter_5050_button()) {
           data.has_used_50_50 = true;
           const auto correct_answer = data.current_question.correct_answer;
           auto removed_1 = 0;
           auto removed_2 = 0;
+          // 'borramos' dos respuestas incorrectas
+          // si la respuesta correcta es la ultima, se borran las dos previas
+          // sino, se borran las dos respuestas adyacentes si es posible sino las dos siguientes
           if (correct_answer == data.current_question.answers.size() - 1)
           {
-            // can use size()-2 and size()-3 because we know the size is at least 4
             removed_1 = correct_answer - 2;
             removed_2 = correct_answer - 3;
           } else
@@ -848,6 +858,7 @@ auto main() -> int
               removed_2 = correct_answer - 1;
             }
           }
+          
           data.current_question.answers.at(removed_1) = "";
           data.current_question.answers.at(removed_2) = "";
         }
@@ -855,11 +866,12 @@ auto main() -> int
         if (data.state == question_state::correct) {
           data.state = question_state::not_answered;
           if (data.current_round == questions.size()) {
+            // 'end' es la misma para perder o ganar, lo que cambia es el mensaje
             data.current_scene = scene::end;
             data.end_msg = "Felicidades, has ganado 1,000,000$!";
-
             break;
           }
+          // Pasar a la siguiente pregunta
           data.current_round++;
           data.current_question = poll_random_question(data.current_round);
           data.current_scene = scene::show_scores;
@@ -871,11 +883,13 @@ auto main() -> int
       }
       case scene::end: {
         if (end_screen_gui(data.end_msg)) {
+          // usar el constructor por defecto para resetear los valores
           data = game_data {};
         }
         break;
       }
     }
   };
+  // en el pseudocodigo se cambia el callback por un while y el flag de exit, pero asi lo pide HelloImGui
   HelloImGui::Run(params);
 }
