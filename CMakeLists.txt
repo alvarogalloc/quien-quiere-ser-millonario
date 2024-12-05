@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 option (APP_BUILD_BUNDLE "Build bundle for macOS" OFF)
 option (APP_USE_MODULES "Build with c++20 modules" OFF)
+set(HELLOIMGUI_DOWNLOAD_FREETYPE_IF_NEEDED ON)
+set(HELLOIMGUI_MACOS_NO_BUNDLE ON)
 
 set(CMAKE_CXX_STANDARD 23)
 if(APP_USE_MODULES)
