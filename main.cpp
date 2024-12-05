@@ -78,9 +78,9 @@ constexpr static all_questions questions {{
      0},
     {"¿En qué año se fundó Facebook?", {"2001", "2004", "2008", "2012"}, 1},
     {"¿Cuál es la moneda oficial de Japón?", {"Dólar", "Yen", "Peso", "Euro"}, 1},
-    {"¿En qué país se celebraron los primeros Juegos Olímpicos modernos?",
+    {"¿En qué país se celebraron los últimos juegos Olímpicos?",
      {"Francia", "Grecia", "Estados Unidos", "Italia"},
-     1},
+     0},
   }},
   // level4
   {{
@@ -126,7 +126,7 @@ constexpr static all_questions questions {{
     {"¿Cuál es el planeta más grande del sistema solar?",
      {"Tierra", "Saturno", "Júpiter", "Marte"},
      2},
-    {"¿En qué país se originaron los Juegos Olímpicos?", {"Italia", "Grecia", "China", "Japón"}, 1},
+    {"¿En qué país no ha habido Juegos Olímpicos?", {"Egipto", "Finlandia", "China", "Japón"}, 0},
   }},
   // level6
   {{
@@ -465,312 +465,310 @@ namespace pallete {
   constexpr static auto green = ImColor(105, 175, 18).Value;
   constexpr static auto gold = ImColor(175, 168, 18).Value;
 } // namespace pallete
+HelloImGui::FontDpiResponsive* g_font = nullptr;
 
 // son funciones solo usadas en este archivo
-namespace {
+auto poll_random_question(std::uint8_t level) -> question
+{
+  // no son objetos ligeros, por eso se usa static
+  static std::random_device s_random_device;
+  static std::minstd_rand s_generator(s_random_device());
+  std::uniform_int_distribution<std::uint8_t> distribution(0, questions.at(0).size() - 1);
+  return questions.at(level - 1).at(distribution(s_generator));
+}
 
-  auto poll_random_question(std::size_t level) -> question
-  {
-    // no son objetos ligeros, por eso se usa static
-    static std::random_device s_random_device;
-    static std::minstd_rand s_generator(s_random_device());
-    std::uniform_int_distribution<std::size_t> distribution(0, questions.at(0).size() - 1);
-    return questions.at(level - 1).at(distribution(s_generator));
+void load_my_font()
+{
+  HelloImGui::GetRunnerParams()->dpiAwareParams.onlyUseFontDpiResponsive = true;
+  constexpr static auto font_size = 56.f;
+  g_font = HelloImGui::LoadFontDpiResponsive("fonts/DroidSans.ttf", font_size);
+}
+
+void BackgroundImage()
+{
+  ImGui::SetCursorPos(ImVec2(0, 0));
+  HelloImGui::ImageFromAsset("bg.png");
+  ImGui::SetCursorPos(ImVec2(0, 0));
+}
+
+void top_left_logo()
+{
+  constexpr static ImVec2 logo_size {128, 128};
+  HelloImGui::ImageFromAsset("Logo.png", logo_size);
+  ImGui::SetCursorPos(ImVec2(0, 0));
+}
+
+auto custom_button(const char* label) -> bool
+{
+  constexpr static ImVec2 buttonSize(300, 80);
+  ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonSize.x) / 2);
+
+  ImGui::PushStyleColor(ImGuiCol_Button, pallete::title_button);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, pallete::title_button_hovered);
+  ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 30.f);
+
+  
+  bool pressed = ImGui::Button(label, buttonSize);
+  
+
+  ImGui::PopStyleVar(4);
+
+  ImGui::PopStyleColor(3);
+  return pressed;
+}
+void timer_bar(const std::uint8_t current_time, const std::uint8_t max_time)
+{
+  if (current_time > max_time) {
+    std::println("Invalid time");
+    return;
+  }
+  const auto progress = static_cast<float>(current_time) / max_time;
+
+  constexpr static ImVec2 bar_size {300, 48};
+  const ImVec2 bar_pos {(ImGui::GetWindowWidth() - bar_size.x) / 2, 10};
+
+  ImGui::SetCursorPos(bar_pos);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f);
+
+  ImGui::PushStyleColor(ImGuiCol_PlotHistogram, pallete::green);
+
+  ImGui::ProgressBar(progress, bar_size, std::format("{:L} s", max_time - current_time).c_str());
+
+  ImGui::PopStyleColor();
+  ImGui::PopStyleVar(2);
+}
+auto title_screen_gui(bool &exit_flag) -> bool
+{
+  BackgroundImage();
+
+  constexpr static ImVec2 logo_size {340, 340};
+  ImGui::SetCursorPosX((ImGui::GetWindowWidth() - logo_size.x) / 2);
+  HelloImGui::ImageFromAsset("Logo.png", logo_size);
+
+  constexpr static ImVec2 spacing {0, 34};
+  ImGui::Dummy(spacing);
+  ImGui::Dummy(spacing);
+  if (custom_button("Jugar")) {
+    return true;
+  }
+  ImGui::Dummy(spacing);
+
+  if (custom_button("Salir")) {
+    exit_flag = true;
   }
 
-  HelloImGui::FontDpiResponsive* g_font = nullptr;
-  void load_my_font()
-  {
-    HelloImGui::GetRunnerParams()->dpiAwareParams.onlyUseFontDpiResponsive = true;
-    constexpr static auto font_size = 56.f;
-    g_font = HelloImGui::LoadFontDpiResponsive("fonts/DroidSans.ttf", font_size);
+  return false;
+}
+
+void prize_box(const std::uint8_t round_number, const std::uint8_t current_round)
+{
+  if (round_number < 1 || round_number > questions.size()) {
+    std::println("Invalid question number");
+    return;
   }
+  const auto used_color = [round_number, current_round]() -> ImVec4 {
+    ImVec4 color {pallete::title_button};
+    if (round_number == current_round) {
+      color = pallete::green;
+    } else if (round_number == questions.size()) {
+      color = pallete::gold;
+    } else if (round_number < current_round) {
+      color = pallete::title_button_hovered;
+    } 
+    return color;
+  }();
+  const ImVec2 prize_box_size {200.f + (25.f * round_number), 38};
 
-  void BackgroundImage()
-  {
-    ImGui::SetCursorPos(ImVec2(0, 0));
-    HelloImGui::ImageFromAsset("bg.png");
-    ImGui::SetCursorPos(ImVec2(0, 0));
-  }
+  ImGui::SetCursorPosX((ImGui::GetWindowWidth() - prize_box_size.x) / 2);
+  ImGui::PushStyleColor(ImGuiCol_Button, used_color);
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, used_color);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, used_color);
+  ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
 
-  void top_left_logo()
-  {
-    constexpr static ImVec2 logo_size {128, 128};
-    HelloImGui::ImageFromAsset("Logo.png", logo_size);
-    ImGui::SetCursorPos(ImVec2(0, 0));
-  }
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 3.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
-  auto custom_button(const char* label) -> bool
-  {
-    constexpr static ImVec2 buttonSize(300, 80);
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - buttonSize.x) / 2);
+  
 
-    ImGui::PushStyleColor(ImGuiCol_Button, pallete::title_button);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, pallete::title_button_hovered);
-    ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
+  ImGui::Button(std::format("$ {:L}", prizes.at(round_number - 1)).c_str(), prize_box_size);
+  // formatea con $ y separador de miles, para eso se usa :L y std::locale("")
+  // que usa el locale del sistema
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 30.f);
+  
+  ImGui::PopStyleColor(4);
+  ImGui::PopStyleVar(4);
+}
 
-    ImGui::PushFont(g_font->font);
-    bool pressed = ImGui::Button(label, buttonSize);
-    ImGui::PopFont();
+// returns wheter to continue to the next question
+auto show_scores_gui(std::uint8_t current_question) -> bool
+{
+  BackgroundImage();
+  top_left_logo();
 
-    ImGui::PopStyleVar(4);
-
-    ImGui::PopStyleColor(3);
-    return pressed;
-  }
-  void timer_bar(const std::uint8_t current_time, const std::uint8_t max_time)
-  {
-    if (current_time > max_time) {
-      std::println("Invalid time");
-      return;
-    }
-    const auto progress = static_cast<float>(current_time) / max_time;
-
-    constexpr static ImVec2 bar_size {300, 48};
-    const ImVec2 bar_pos {(ImGui::GetWindowWidth() - bar_size.x) / 2, 10};
-
-    ImGui::SetCursorPos(bar_pos);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 10.f);
-
-    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, pallete::green);
-
-    ImGui::ProgressBar(progress, bar_size, std::format("{:L} s", max_time - current_time).c_str());
-
-    ImGui::PopStyleColor();
-    ImGui::PopStyleVar(2);
-  }
-  auto title_screen_gui(HelloImGui::RunnerParams& params) -> bool
-  {
-    BackgroundImage();
-
-    constexpr static ImVec2 logo_size {340, 340};
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - logo_size.x) / 2);
-    HelloImGui::ImageFromAsset("Logo.png", logo_size);
-
-    constexpr static ImVec2 spacing {0, 34};
+  // this is 15 boxes one on top of the other with a prize money on each
+  // here we explicitly use signed integers because we want to go from 15 to 1
+  for (std::int8_t i = questions.size(); i > 0; i--) {
+    constexpr static ImVec2 spacing {0, 5};
     ImGui::Dummy(spacing);
-    ImGui::Dummy(spacing);
-    if (custom_button("Jugar")) {
-      return true;
-    }
-    ImGui::Dummy(spacing);
-
-    if (custom_button("Salir")) {
-      params.appShallExit = true;
-    }
-
-    return false;
+    prize_box(i, current_question);
   }
+  std::string_view prompt_text = "Haz click para continuar";
+  
+  const ImVec2 prompt_pos {
+    ImGui::GetWindowWidth() - (ImGui::CalcTextSize(prompt_text.data()).x + 10.f),
+    ImGui::GetWindowHeight() - 50.f};
+  ImGui::SetCursorPos(prompt_pos);
+  ImGui::TextUnformatted(prompt_text.data());
+  
+  return ImGui::IsMouseClicked(0);
+}
 
-  void prize_box(const std::uint8_t round_number, const std::uint8_t current_round)
-  {
-    if (round_number < 1 || round_number > questions.size()) {
-      std::println("Invalid question number");
-      return;
+enum class question_state : std::uint8_t {
+  not_answered,
+  correct,
+  incorrect,
+};
+
+// return true if the button is pressed
+bool filter_5050_button()
+{
+  constexpr static ImVec2 button_size {96, 96};
+  const ImVec2 button_pos {ImGui::GetWindowWidth() - button_size.x - 10, 10};
+  ImGui::SetCursorPos(button_pos);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.0f);
+
+  ImGui::PushStyleColor(ImGuiCol_Button, pallete::title_button);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, pallete::title_button_hovered);
+  ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
+
+  const bool is_pressed = ImGui::Button("50:50", button_size);
+
+  ImGui::PopStyleColor(3);
+  ImGui::PopStyleVar(2);
+  return is_pressed;
+}
+
+bool play_again_button()
+{
+  constexpr static auto button_size = ImVec2(300, 80);
+  ImGui::SetCursorPosX((ImGui::GetWindowWidth() - button_size.x) / 2);
+  return custom_button("Jugar de nuevo");
+}
+
+// returns whether to return to title_scene
+// make a big text in the center, with a play_again_button below
+bool end_screen_gui(std::string_view message)
+{
+  BackgroundImage();
+  top_left_logo();
+
+  
+  const auto text_size = ImGui::CalcTextSize(message.data());
+  ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - text_size.x) / 2, 100));
+  ImGui::TextUnformatted(message.data());
+  
+
+  ImGui::Dummy(ImVec2(0, 100));
+  return play_again_button();
+}
+
+void question_gui(question_state& state, const question& current_question)
+{
+  BackgroundImage();
+  // show logo scaled 128x128 on the top left corner
+  top_left_logo();
+
+  
+
+  auto copy_color = pallete::title_button;
+  copy_color.w = 0.7f;
+  ImGui::PushStyleColor(ImGuiCol_Button, copy_color);
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, copy_color);
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, copy_color);
+  ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.f);
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+
+  constexpr static ImVec2 prompt_pos {205, 64};
+  constexpr static ImVec2 prompt_size {870, 160};
+  ImGui::SetCursorPos(prompt_pos);
+  // we copy it
+  constexpr static ImVec2 answer_button_size {480, 160};
+
+  constexpr static auto spacing_around_prompt = 128;
+  auto wrapped_text = [max_text_width = prompt_size.x - spacing_around_prompt](std::string str) {
+    auto text_size = ImGui::CalcTextSize(str.data());
+    if (text_size.x > max_text_width) {
+      // put a \n in the middle of the string, but not in the middle of a word
+      auto middle = str.size() / 2;
+      auto middle_it = std::find_if(str.begin() + middle, str.end(), [](char ch) {
+        return std::isspace(ch);
+      });
+      if (middle_it != str.end()) {
+        *middle_it = '\n';
+      }
     }
-    const auto used_color = [round_number, current_round]() -> ImVec4 {
-      ImVec4 color {0, 0, 0, 0};
-      if (round_number == current_round) {
-        color = pallete::green;
-      } else if (round_number == questions.size()) {
-        color = pallete::gold;
-      } else if (round_number < current_round) {
-        color = pallete::title_button_hovered;
+    return str;
+  }(std::string {current_question.question});
+
+  ImGui::Button(wrapped_text.c_str(), prompt_size);
+
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, [] {
+    auto color = pallete::title_button_hovered;
+    // change alpha
+    color.w = 0.7f;
+    return color;
+  }());
+
+  ImGui::SetCursorPosY(340);
+  for (std::uint8_t i = 0; i < current_question.answers.size(); i++) {
+    const auto& answer = current_question.answers.at(i);
+
+    bool is_valid = answer != "";
+    if (i % 2 == 1) {
+      ImGui::SameLine();
+      ImGui::SetCursorPosX(700);
+    } else {
+      ImGui::SetCursorPosX(100);
+      if (i != 0) {
+        ImGui::SetCursorPosY(520); // second row
+      }
+    }
+
+    if (not is_valid) {
+      ImGui::BeginDisabled(true);
+    }
+    // ## is the 'empty' token for imgui and add i to avoid duplicate conflicts
+    const auto button_text = is_valid ? answer.data() : std::format("##{}", i);
+    if (ImGui::Button(button_text.c_str(), answer_button_size) and is_valid) {
+      if (i == current_question.correct_answer) {
+        state = question_state::correct;
       } else {
-        color = pallete::title_button;
-      }
-      return color;
-    }();
-    const ImVec2 prize_box_size {200.f + (25.f * round_number), 38};
-
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - prize_box_size.x) / 2);
-    ImGui::PushStyleColor(ImGuiCol_Button, used_color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, used_color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, used_color);
-    ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 3.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-
-    ImGui::PushFont(g_font->font);
-
-    ImGui::Button(std::format("$ {:L}", prizes.at(round_number - 1)).c_str(), prize_box_size);
-    // formatea con $ y separador de miles, para eso se usa :L y std::locale("")
-    // que usa el locale del sistema
-
-    ImGui::PopFont();
-    ImGui::PopStyleColor(4);
-    ImGui::PopStyleVar(4);
-  }
-
-  // returns wheter to continue to the next question
-  auto show_scores_gui(std::uint8_t current_question) -> bool
-  {
-    BackgroundImage();
-    top_left_logo();
-
-    // this is 15 boxes one on top of the other with a prize money on each
-    // here we explicitly use signed integers because we want to go from 15 to 1
-    for (std::int8_t i = questions.size(); i > 0; i--) {
-      constexpr static ImVec2 spacing {0, 5};
-      ImGui::Dummy(spacing);
-      prize_box(i, current_question);
-    }
-    std::string_view prompt_text = "Haz click para continuar";
-    ImGui::PushFont(g_font->font);
-    const ImVec2 prompt_pos {
-      ImGui::GetWindowWidth() - (ImGui::CalcTextSize(prompt_text.data()).x + 10.f),
-      ImGui::GetWindowHeight() - 50.f};
-    ImGui::SetCursorPos(prompt_pos);
-    ImGui::TextUnformatted(prompt_text.data());
-    ImGui::PopFont();
-    return ImGui::IsMouseClicked(0);
-  }
-
-  enum class question_state : std::uint8_t {
-    not_answered,
-    correct,
-    incorrect,
-  };
-
-  // return true if the button is pressed
-  bool filter_5050_button()
-  {
-    constexpr static ImVec2 button_size {96, 96};
-    const ImVec2 button_pos {ImGui::GetWindowWidth() - button_size.x - 10, 10};
-    ImGui::SetCursorPos(button_pos);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.0f);
-
-    ImGui::PushStyleColor(ImGuiCol_Button, pallete::title_button);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, pallete::title_button_hovered);
-    ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
-
-    const bool is_pressed = ImGui::Button("50:50", button_size);
-
-    ImGui::PopStyleColor(3);
-    ImGui::PopStyleVar(2);
-    return is_pressed;
-  }
-
-  bool play_again_button()
-  {
-    constexpr static auto button_size = ImVec2(300, 80);
-    ImGui::SetCursorPosX((ImGui::GetWindowWidth() - button_size.x) / 2);
-    return custom_button("Jugar de nuevo");
-  }
-
-  // returns whether to return to title_scene
-  // make a big text in the center, with a play_again_button below
-  bool end_screen_gui(std::string_view message)
-  {
-    BackgroundImage();
-    top_left_logo();
-
-    ImGui::PushFont(g_font->font);
-    const auto text_size = ImGui::CalcTextSize(message.data());
-    ImGui::SetCursorPos(ImVec2((ImGui::GetWindowWidth() - text_size.x) / 2, 100));
-    ImGui::TextUnformatted(message.data());
-    ImGui::PopFont();
-
-    ImGui::Dummy(ImVec2(0, 100));
-    return play_again_button();
-  }
-
-  void question_gui(question_state& state, const question& current_question)
-  {
-    BackgroundImage();
-    // show logo scaled 128x128 on the top left corner
-    top_left_logo();
-
-    ImGui::PushFont(g_font->font);
-
-    auto copy_color = pallete::title_button;
-    copy_color.w = 0.7f;
-    ImGui::PushStyleColor(ImGuiCol_Button, copy_color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, copy_color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, copy_color);
-    ImGui::PushStyleColor(ImGuiCol_Border, pallete::color_border);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 5.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 50.f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
-
-    constexpr static ImVec2 prompt_pos {205, 64};
-    constexpr static ImVec2 prompt_size {870, 160};
-    ImGui::SetCursorPos(prompt_pos);
-    // we copy it
-    constexpr static ImVec2 answer_button_size {480, 160};
-
-    constexpr static auto spacing_around_prompt = 128;
-    auto wrapped_text = [max_text_width = prompt_size.x - spacing_around_prompt](std::string str) {
-      auto text_size = ImGui::CalcTextSize(str.data());
-      if (text_size.x > max_text_width) {
-        // put a \n in the middle of the string, but not in the middle of a word
-        auto middle = str.size() / 2;
-        auto middle_it = std::find_if(str.begin() + middle, str.end(), [](char ch) {
-          return std::isspace(ch);
-        });
-        if (middle_it != str.end()) {
-          *middle_it = '\n';
-        }
-      }
-      return str;
-    }(std::string {current_question.question});
-
-    ImGui::Button(wrapped_text.c_str(), prompt_size);
-
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, [] {
-      auto color = pallete::title_button_hovered;
-      // change alpha
-      color.w = 0.7f;
-      return color;
-    }());
-
-    ImGui::SetCursorPosY(340);
-    for (std::size_t i = 0; i < current_question.answers.size(); i++) {
-      const auto& answer = current_question.answers.at(i);
-      bool is_valid = answer != "##";
-      if (i % 2 == 1) {
-        ImGui::SameLine();
-        ImGui::SetCursorPosX(700);
-      } else {
-        ImGui::SetCursorPosX(100);
-        if (i != 0) {
-          ImGui::SetCursorPosY(520); // second row
-        }
-      }
-
-      if (not is_valid) {
-        ImGui::BeginDisabled(true);
-      }
-      if (ImGui::Button(current_question.answers.at(i).data(), answer_button_size) and is_valid) {
-        if (i == current_question.correct_answer) {
-          state = question_state::correct;
-        } else if (not current_question.answers.at(i).empty()) {
-          state = question_state::incorrect;
-        }
-      }
-      if (not is_valid) {
-        ImGui::EndDisabled();
+        state = question_state::incorrect;
       }
     }
-    ImGui::PopStyleColor(5);
-    ImGui::PopStyleVar(4);
-    ImGui::PopFont();
+    if (not is_valid) {
+      ImGui::EndDisabled();
+    }
   }
-} // namespace
+  ImGui::PopStyleColor(5);
+  ImGui::PopStyleVar(4);
+  
+}
 
 auto main() -> int
 {
@@ -793,7 +791,7 @@ auto main() -> int
     scene current_scene = scene::title;
     question_state state = question_state::not_answered;
     question current_question = poll_random_question(1);
-    std::size_t current_round = 1;
+    std::uint8_t current_round = 1;
     bool has_used_50_50 = false;
     int start_time = 0;
     std::string end_msg = "";
@@ -804,7 +802,7 @@ auto main() -> int
 
     switch (data.current_scene) {
       case scene::title: {
-        if (title_screen_gui(params)) {
+        if (title_screen_gui(params.appShallExit)) {
           data.current_scene = scene::show_scores;
           ImGui::SetWindowFontScale(0.5f);
         }
@@ -832,13 +830,26 @@ auto main() -> int
         if (not data.has_used_50_50 and filter_5050_button()) {
           data.has_used_50_50 = true;
           const auto correct_answer = data.current_question.correct_answer;
-          auto removed_1 = correct_answer == data.current_question.answers.size() - 1
-            ? correct_answer - 1
-            : correct_answer + 1;
-          auto removed_2 = correct_answer == removed_1 + 1 ? removed_1 - 1 : removed_1 + 1;
-          // ## is the 'empty' token for imgui
-          data.current_question.answers.at(removed_1) = "##";
-          data.current_question.answers.at(removed_2) = "##";
+          auto removed_1 = 0;
+          auto removed_2 = 0;
+          if (correct_answer == data.current_question.answers.size() - 1)
+          {
+            // can use size()-2 and size()-3 because we know the size is at least 4
+            removed_1 = correct_answer - 2;
+            removed_2 = correct_answer - 3;
+          } else
+          {
+            removed_1 = correct_answer + 1;
+            if (correct_answer == 0)
+            {
+              removed_2 = removed_1 + 1;
+            } else
+            {
+              removed_2 = correct_answer - 1;
+            }
+          }
+          data.current_question.answers.at(removed_1) = "";
+          data.current_question.answers.at(removed_2) = "";
         }
 
         if (data.state == question_state::correct) {

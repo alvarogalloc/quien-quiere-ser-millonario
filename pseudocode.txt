@@ -1,0 +1,418 @@
+# inicio de constantes y estructuras globales
+title: string = "¿Quién quiere ser millonario?"
+
+windowSize: enteros xy = (1280, 720)
+
+prizes: enteros = [500, 1000, 2000, 3000, 5000, 7500, 10000, 12500,
+ 	15000, 25000, 50000, 100000, 250000, 500000, 1000000]
+
+# puntero a una fuente que aun no cargamos
+global g_font: puntero = null
+
+namespace pallete:
+  title_button: color = RGB (23, 14, 55)
+  title_button_hovered: color = RGB (46, 38, 75)
+  color_border: color = RGB (255, 255, 255)
+  green: color = RGB (105, 175, 18)
+  gold: color = RGB (175, 168, 18)
+Fin namespace
+
+estructura question
+  question: string
+  answers: string[4]
+  correct_answer: entero
+fin estructura
+
+enum question_state
+    not_answered,
+    correct,
+    incorrect,
+fin enum
+
+
+enum scene
+    title,
+    show_scores,
+    question,
+    end
+fin enum
+
+estructura game_data
+  escena_actual: scene = scene::title
+  estado: question_state = question_state::not_answered
+  pregunta_actual: question = poll_random_question(1)
+  ronda_actual: entero = 1
+  uso_50_50: booleano = falso
+  tiempo_inicio: entero = 0
+  mensaje_final: string = ""
+fin estructura
+
+definir questions como un arreglo bidimensional donde:
+- La primera dimensión tiene 15 elementos (niveles).
+- La segunda dimensión tiene 10 elementos (preguntas por nivel).
+- Cada elemento es un objeto de tipo `question`.
+- llenado con 10 preguntas por nivel (150 preguntas)
+
+# fin estructuras y constantes
+
+Función poll_random_question(nivel: entero) -> question
+  s_random_device: dispositivo_generador = random device (static)
+  s_generator: generador aleatorio = rand_generator(s_random_device) (static)
+  # rango de generador
+  distribution: distribucion de enteros = [0, número_de_preguntas_en_el_nivel - 1]
+  índice_aleatorio = distribution(s_generator)
+  # Devolver la pregunta seleccionada del nivel y del índice calculado
+  retornar preguntas[nivel-1][índice_aleatorio]
+Fin Función
+
+Funcion load_my_font
+  font_size: entero = 56
+  g_font = cargar_fuente("fonts/DroidSans.ttf", font_size)
+  usar fuente g_font
+Fin Funcion
+
+Funcion BackgroundImage
+  posicion del cursor = (0,0)
+  mostrar imagen “bg.png”
+  posicion del cursor = (0,0)
+Fin Funcion
+
+Funcion top_left_logo
+  logo_size: enteros xy = (128, 128)
+  mostrar imagen("Logo.png", logo_size)
+  posicion del cursor = (0,0)
+Fin Funcion
+
+Funcion custom_button(label: string) -> booleano
+  buttonSize: enteros xy = (300, 80)
+  posicion del cursor x  = (windowSize.x - buttonSize.x) / 2
+  color para boton = pallete::title_button
+  color para boton con mouse = pallete::title_button_hovered
+  color para borde = pallete::color_border
+  tamaño de borde = 5
+  relleno del marco = (0, 0)
+  espaciado entre elementos = (0, 0)
+  redondeo del marco = 30
+  mostrarBoton(label, buttonSize)
+  leer estaPresionado: booleano = retornado de mostrarBoton
+  retornar estaPresionado
+Fin Funcion
+
+Funcion timer_bar(tiempo_maximo: entero, tiempo_actual: entero)
+  si tiempo_actual > tiempo_maximo 
+    mostrar "Tiempo inválido"
+    terminar funcion
+  fin si
+
+  progreso: float = tiempo_actual / tiempo_maximo
+  tamaño de barra: enteros xy = (300, 48)
+  posición de barra: enteros xy = [(windowSize.x - tamaño de barra.x) / 2, 10]
+  posición del cursor = posición de barra
+
+  tamaño de borde = 0
+  redondeo del marco = 10
+  color de barra = pallete::green
+
+  texto de barra: string = "tiempo restante: (tiempo_maximo - tiempo_actual) s"
+  mostrar barra de progreso con progreso, tamaño de barra y texto de barra
+Fin Funcion
+
+Funcion title_screen_gui (salida: referencia a booleano) -> booleano
+  llamar a BackgroundImage  
+
+  tamaño del logo : enteros xy = (340, 340)
+  posición del cursor en X = (windowSize.x - tamaño del logo.x) / 2  
+  mostrar imagen "Logo.png" con tamaño del logo  
+  espaciado: enteros xy = (0, 34)
+  insertar espaciado
+  insertar espaciado
+  presionado: booleano = falso
+  mostrar boton "Jugar"
+  leer presionado = retornado de mostrar boton "Jugar"
+  si presionado entonces  
+    retornar verdadero  
+  fin si
+
+  insertar espaciado  
+
+  mostrar boton "Salir"
+  leer presionado = retornado de mostrar boton "Salir"
+  si presionado entonces  
+    salida = verdadero
+  fin si
+
+  retornar falso
+Fin Funcion
+
+Funcion prize_box (round_number: entero, current_round: entero)
+  # questions.size es el número total de rondas
+  si round_number < 1 || round_number > questions.size entonces  
+    mostrar "Número de pregunta inválido"  
+    terminar  
+  fin si
+
+  color_usado = dependiendo del estado de la ronda:  
+    - si round_number == round_number pallete::green  
+    - si round_number == questions.size pallete::gold  
+    - si round_number < current_round pallete::title_button_hovered  
+    - de lo contrario pallete::title_button  
+
+  tamaño de la caja: enteros xy = (200 + (25 * round_number), 38) 
+
+  posición del cursor en X = (windowSize.x - tamaño de la caja.x) / 2  
+  color del botón = color_usado  
+  color del botón activo = color_usado  
+  color del botón con mouse = color_usado  
+  color del borde = blanco  
+
+  tamaño del borde = 3
+  redondeo del marco = 50
+  relleno del marco = (0, 0) 
+  espaciado entre elementos = (0, 0)
+  valor_premio: int = prizes[round_number - 1]
+  mostrar cuadro con texto "$ {valor_premio}" con tamaño de caja
+Fin Funcion
+
+
+Funcion show_scores_gui(current_question: entero) -> booleano
+  llamar a BackgroundImage  
+  llamar a top_left_logo  
+
+  para i desde questions.size hasta 1 (decrementando):  
+    llamar a prize_box con prizes[i] y pregunta_actual  
+    espaciado: enteros xy = (0, 5)  
+    insertar espaciado
+  fin para
+
+  texto de instrucción: string = "Haz click para continuar"  
+  ancho del texto: entero = obtener_ancho_texto(texto de instrucción)
+  posición del texto: enteros xy = (windowSize.x - (ancho del texto + 10), windowSize.y - 50)  
+
+  posición del cursor = posición del texto  
+
+  mostrar texto {texto de instrucción}
+
+  retornar verdadero si el botón izquierdo del mouse fue presionado  
+Fin Funcion
+
+función filter_5050_button() -> booleano  
+  button_size: enteros xy = (96, 96)  
+  button_pos: enteros xy = (windowSize.x - button_size.x - 10, 10) 
+
+  posición del cursor = button_pos  
+
+  redondeo del marco = 50
+  tamaño del borde = 5
+
+  color del botón = pallete::title_button  
+  color del botón con mouse = pallete::title_button_hovered  
+  color del borde = pallete::color_border  
+
+  mostrar botón "50:50" con button_size
+
+  retornar verdadero si el boton "50:50" fue presionado  
+fin función  
+
+
+Funcion play_again_button -> booleano
+  button_size: enteros xy = (300, 80);
+  posicion del cursor.x = (windowSize.x - button_size.x) / 2;
+  presionado: booleano = retornado de llamar custom_button("Jugar de nuevo")
+  retornar presionado
+Fin Funcion
+
+
+Funcion end_screen_gui (message: string)
+  llamar a BackgroundImage  
+  llamar a top_left_logo  
+
+  tamaño del texto: enteros xy = obtener_tamaño_texto(message)  
+  posición del texto: enteros xy = ((windowSize.x - tamaño del texto.x) / 2, 100)
+  posición del cursor = posición del texto  
+  mostrar texto (message)  
+
+  espaciado: enteros xy = (0, 100)
+  insertar espaciado 
+
+  presionado: booleano = retornado de llamar a play_again_button()
+  retornar presionado
+Fin Funcion
+
+
+Funcion wrap_text(texto: string, max_text_width: int) -> string
+    tamaño_texto: entero = obtener_tamaño_texto(texto)
+    si tamaño_texto.x > max_text_width entonces
+      mitad: entero  = tamaño_texto.size / 2
+      mitad_ch: ref a char = primer espacio despues de la mitad de 'texto'
+
+      si mitad_ch existe entonces
+        # mitad_ch cambia a 'texto'
+        mitad_ch = '\n'
+      fin si
+    fin si
+    retornar texto
+Fin Funcion
+
+Funcion question_gui (state: referencia a question_state, current_question: question)
+  llamar a BackgroundImage
+  llamar a top_left_logo
+
+  # boton de prompt
+  colorbotón = pallete::title_button
+  colorboton.a = 0.7
+
+  color boton = colorboton
+  color boton activo = colorboton
+  color boton con mouse = colorboton
+  color del borde = pallete::color_border
+
+  tamaño del borde = 5
+  redondeo del marco = 50
+  relleno del marco = (0, 0)
+  espaciado entre elementos = (0, 0)
+
+  posicion_prompt: enteros xy = (205, 64)
+  tamaño_prompt: enteros xy = (870, 160)
+  tamaño_boton_respuesta: enteros xy = (480, 160)
+
+  posicion del cursor = posicion_texto
+
+  espacio_alrededor_texto: entero = 128
+  texto_envuelto = resultado de wrap_text con current_question.question, tamaño_prompt.x - espacio_alrededor_texto
+
+  mostrar boton (texto_envuelto) con tamaño_texto
+  # fin boton de prompt
+
+  color boton con mouse = pallete::title_button_hovered
+  posicion del cursor en Y = 340
+
+  para i = 0 mientras i < current_question.answers.size
+    respuesta: string = current_question.answers[i]
+    es_valida: booleano = respuesta != ""
+    # posiciones correctas para los cuatro botones
+    si i % 2 == 1 entonces
+      posicion del cursor en X = 700
+    sino
+      posicion del cursor en X = 100
+      si i != 0 entonces
+        posicion del cursor en Y = 520
+      fin si
+    fin si
+
+    si no es_valida entonces
+      # evita eventos en botones quitados
+      desactivar botones 
+    fin si
+
+    # '##' es el token 'vacío' para imgui y se le agrega i para evitar conflictos duplicados
+    texto_boton: string
+    si es_valida entonces 
+      texto_boton = respuesta
+    sino 
+      texto_boton = "##" + i
+    fin si
+    mostrar boton contexto_boton y tamaño_boton_respuesta
+    leer estado del boton en presionado
+
+    si presionado && es_valida entonces
+      si i == current_question.correct_answer entonces
+        state = question_state::correct
+      sino
+        state = question_state::incorrect
+      fin si
+    fin si
+
+    si ! es_valida entonces
+      activar botones
+    fin si
+  fin para
+
+Fin Funcion
+
+
+
+Inicio ejecucion
+  # para separador de miles y decimales
+  setear localización del sistema al pais indicado
+
+  parametros: estructura libreria imgui = {}
+  parametros.tamañoventana: enteros xy = windowSize
+  parametros.tituloventana: string = title
+  parametros.redimensionable: booleano = falso
+  parametros.callbacks.CargarFuentesAdicionales: funcion = load_my_font
+  parametros.MostrarBarraMenu: booleano = falso
+  parametros.MostrarMenuAplicacion: booleano = falso
+  parametros.salir: booleano = falso
+
+
+  datos: game_data = {}
+  mientras ! parametros.salir hacer 
+    si datos.escena_actual == scene::title entonces
+      salir: booleano = title_screen_gui(& parametros.salir)
+      si salir entonces
+        datos.escena_actual = scene::show_scores
+      fin si
+    sino si datos.escena_actual == scene::show_scores entonces
+      salir: booleano = show_scores_gui(datos.ronda_actual)
+      si salir entonces
+        datos.escena_actual = scene::question
+        datos.tiempo_inicio = tiempo_actual()
+      fin si
+    sino si datos.escena_actual == scene::question entonces
+      llamar a question_gui(& datos.estado, datos.pregunta_actual)
+      # funciona con std::time por que regresa el tiempo en segundos desde epoch (01/01/1970)
+      segundos_transcurridos: entero = tiempo_actual() - datos.tiempo_inicio
+      segundos_maximos: entero = 30
+      si segundos_transcurridos > segundos_maximos entonces
+        datos.escena_actual = scene::end
+        datos.mensaje_final = "Se te acabó el tiempo!"
+      sino
+        # mostrar ui normalmente
+        llamar a timer_bar(segundos_transcurridos, segundos_maximos)
+      fin si
+      presionado: booleano = retornado de filter_5050_button()
+      si ! datos.uso_50_50 && presionado entonces
+        datos.uso_50_50 = verdadero
+        respuesta_correcta = datos.pregunta_actual.respuesta_correcta
+
+        respuesta_eliminada_1: entero
+        respuesta_eliminada_2: entero
+
+        si respuesta_correcta == datos.pregunta_actual.respuestas.size - 1 entonces
+          respuesta_eliminada_1 = respuesta_correcta - 1
+        sino
+          respuesta_eliminada_1 = respuesta_correcta + 1
+        fin si
+
+        si respuesta_correcta == respuesta_eliminada_1 + 1 entonces
+          respuesta_eliminada_2 = respuesta_eliminada_1 - 1
+        sino
+          respuesta_eliminada_2 = respuesta_eliminada_1 + 1
+        fin si
+
+        datos.pregunta_actual.respuestas[respuesta_eliminada_1] = ""
+        datos.pregunta_actual.respuestas[respuesta_eliminada_2] = ""
+      fin si
+
+      si datos.estado == question_state::correct entonces
+        datos.estado = question_state::not_answered
+        si datos.ronda_actual == questions.size entonces
+          datos.escena_actual = scene::end
+          datos.mensaje_final = "Felicidades, has ganado 1,000,000$!"
+        sino
+          datos.ronda_actual++
+          datos.escena_actual = scene::show_scores
+          datos.pregunta_actual = poll_random_question(datos.ronda_actual)
+        fin si
+      sino si datos.estado == question_state::incorrect entonces
+        datos.escena_actual = scene::end
+        datos.mensaje_final = "Respuesta incorrecta!,\nSuerte la próxima vez!"
+      fin si
+    sino si datos.escena_actual == scene::end entonces
+      salir: booleano = end_screen_gui(datos.mensaje_final)
+      si salir entonces
+        datos = game_data {}
+      fin si
+    fin si
+  fin mientras
+Fin ejecucion
